@@ -9,3 +9,8 @@
 ### Colours
 [] fg and bg colours
 [] show/hide grid
+
+### Saving
+[] autosave
+[] export
+[] import
