@@ -1,26 +1,33 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <!-- <BoxRenderer :width="7" :startData="startData" /> -->
+  <BoxCanvas :width="21" :height="10" />
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+// import BoxRenderer from './components/BoxRenderer.vue'
+import BoxCanvas from './components/BoxCanvas.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
-  }
+    // BoxRenderer
+    BoxCanvas
+  },
+  // data() {
+  //   return {
+  //     startData: [
+  //       0, 0, 0, 0, 0, 0, 0,
+  //       0, 1, 1, 1, 1, 1, 0,
+  //       0, 1, 1, 1, 1, 1, 0,
+  //       0, 1, 1, 1, 1, 1, 0,
+  //       0, 1, 1, 1, 1, 1, 0,
+  //       0, 1, 1, 1, 1, 1, 0,
+  //       0, 0, 0, 0, 0, 0, 0,
+  //     ]
+  //   }
+  // }
 }
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
 </style>
