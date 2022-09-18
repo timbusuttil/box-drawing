@@ -1,15 +1,31 @@
 <template>
+  <!-- canvas -->
   <div class="box-renderer" @mouseleave="hoverCell(-1)">
     <pre
       v-for="(cell, i) in currentData" :key="i"
       :class="cellClasses(i)"
-      @pointerdown="selectCell(i)"
-      @mouseover="hoverCell(i)"
+      :style="cellStyle"
+      @pointerdown="selectCell(i, $event)"
+      @mouseover="hoverCell(i, $event)"
     >{{ cell }}{{ needsNewline(i) ? '\n' : null }}</pre>
+  </div>
+  <!-- controls -->
+  <div class="controls">
+    <div class="control-group">
+      <label><input type="color" v-model="colours.bg">bg col</label>
+      <label><input type="color" v-model="colours.fg">fg col</label>
+      <label><input type="checkbox" v-model="colours.flipped">flip fg/bg</label>
+      <button @click="setColorsFromPresets">random preset</button>
+    </div>
+    <div class="control-group">
+      <label><input type="checkbox" v-model="showBorders">show cell borders</label>
+    </div>
   </div>
 </template>
 
 <script>
+import { presets } from '@/assets/colours.js';
+
 export default {
   name: 'BoxCanvas',
   props: {
@@ -22,7 +38,24 @@ export default {
       mode: 'text',
       currentData: [],
       hoveredCell: -1,
-      selectedCell: -1,
+      selectedCells: [],
+      lastSelected: -1,
+      showBorders: false,
+      colours: {
+        bg: '#000000',
+        fg: '#0000ff',
+        flipped: false,
+      }
+    }
+  },
+  computed: {
+    cellStyle() {
+      let cols = [this.colours.bg, this.colours.fg];
+      if (this.colours.flipped) cols = cols.reverse();
+      return {
+        background: cols[0],
+        color: cols[1]
+      }
     }
   },
   methods: {
@@ -32,14 +65,45 @@ export default {
     cellClasses(i) {
       let classes = [];
       if (this.hoveredCell === i) classes.push('hovered');
-      if (this.selectedCell === i) classes.push('selected');
+      if (this.selectedCells.includes(i)) classes.push('selected');
+      if (this.showBorders) classes.push('borders')
       return classes;
     },
-    selectCell(i) {
-      this.selectedCell = i;
+    selectCell(i, e) {
+      this.lastSelected = i;
+      if (e.shiftKey) {
+        this.selectedCells.push(i);
+      } else {
+        this.selectedCells = [i];
+      }
     },
-    hoverCell(i) {
-      this.hoveredCell = i;
+    selectArea(cell1, cell2) {
+      this.selectedCells = [];
+
+      const co1 = this.coordsByCell(cell1);
+      const co2 = this.coordsByCell(cell2);
+      const sX = Math.min(co1[0], co2[0]);
+      const sY = Math.min(co1[1], co2[1]);
+      const eX = Math.max(co1[0], co2[0]);
+      const eY = Math.max(co1[1], co2[1]);
+      const diffX = eX - sX;
+      const diffY = eY - sY;
+      for (let x = 0; x <= diffX; x++) {
+        for (let y = 0; y <= diffY; y++) {
+          this.selectedCells.push(this.cellByCoords(sX + x, sY + y))
+        }
+      }
+      console.log('----');
+
+      // this.selectedCells = [1, 2, 3, 1+this.width, 2+this.width, 3+this.width];
+      // this.selectedCells = [cell1, cell2];
+    },
+    hoverCell(i, e) {
+      if (e && e.buttons > 0) {
+        this.selectArea(this.lastSelected, i);
+      } else {
+        this.hoveredCell = i;
+      }
     },
     handleKey(e) {
       console.log(e.key);
@@ -53,11 +117,12 @@ export default {
         e.preventDefault();
       } else
 
-      // nav
+      // nav/controls
       if (e.key === 'ArrowUp') { this.arrowNav('n') } else
       if (e.key === 'ArrowDown') { this.arrowNav('s') } else
       if (e.key === 'ArrowLeft') { this.arrowNav('w') } else
       if (e.key === 'ArrowRight') { this.arrowNav('e') } else
+      if (e.key === 'Escape') { this.selectedCells = [] } else
       if (e.key === 'Backspace') {
         e.preventDefault();
         this.applyInput('DEL');
@@ -82,15 +147,15 @@ export default {
     applyInput(input) {
       let parsedInput;
       if (input === 'DEL') {
-        console.log('hello');
         parsedInput = ' ';
       } else {
         parsedInput = input;
       }
 
-      if (this.selectedCell !== -1) {
-        console.log(parsedInput);
-        this.currentData[this.selectedCell] = parsedInput;
+      if (this.selectedCells.length > 0) {
+        this.selectedCells.forEach((cell) => {
+          this.currentData[cell] = parsedInput;
+        });
         if (this.mode === 'text' && input !== 'DEL') this.arrowNav('e');
       } else if (this.hoveredCell !== -1) {
         this.currentData[this.hoveredCell] = parsedInput;
@@ -100,12 +165,31 @@ export default {
       let dir = direction[0];
       let dist = 1;
       if (direction.length > 1) dist = direction[1];
-      if (dir === 'n') this.selectedCell -= this.width * dist;
-      if (dir === 's') this.selectedCell += this.width * dist;
-      if (dir === 'w') this.selectedCell -= dist;
-      if (dir === 'e') this.selectedCell += dist;
-      // clamp
-      this.selectedCell = Math.min(Math.max(this.selectedCell, 0), this.currentData.length - 1);
+      if (this.selectedCells.length === 1) {
+        if (dir === 'n') this.selectedCells[0] -= this.width * dist;
+        if (dir === 's') this.selectedCells[0] += this.width * dist;
+        if (dir === 'w') this.selectedCells[0] -= dist;
+        if (dir === 'e') this.selectedCells[0] += dist;
+        // clamp
+        this.selectedCells[0] = Math.min(Math.max(this.selectedCells[0], 0), this.currentData.length - 1);
+      }
+    },
+    coordsByCell(i) {
+      return [
+        i % this.width,
+        Math.floor(i / this.width)
+      ];
+    },
+    cellByCoords(x, y) {
+      return x + y * this.width;
+    },
+    setColorsFromPresets() {
+      let i = Math.floor(Math.random() * presets.length);
+      console.log(i);
+      console.log(presets[i]);
+      console.log(this.colours.fg);
+      this.colours.fg = presets[i].fg;
+      this.colours.bg = presets[i].bg;
     }
   },
   mounted() {
@@ -120,6 +204,9 @@ export default {
       this.currentData = [...vals];
     }
 
+    // random cols
+    this.setColorsFromPresets();
+
     // key event listener
     document.addEventListener('keydown', this.handleKey)
   }
@@ -127,11 +214,15 @@ export default {
 </script>
 
 <style scoped>
+/* ----------------------------------------------------------- CANVAS */
 .box-renderer {
-  border: 1px solid red;
+  border: 1px solid rgba(0, 0, 0, 0.25);
   width: fit-content;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
+/* ----------------------------------------------------------- CELLS */
 pre {
   font-family: 'Menlo';
   font-size: 50px;
@@ -139,14 +230,43 @@ pre {
   margin: 0;
   display: inline;
   user-select: none;
-  border: 0.1px solid red;
+  box-sizing: border-box;
+}
+
+pre.borders {
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
 }
 
 pre.hovered {
-  background: rgba(0, 0, 255, 0.1);
+  box-shadow: inset 0 0 0 50px rgba(0, 0, 0, 0.1) !important;
 }
 
 pre.selected {
-  background: rgba(0, 0, 255, 0.25) !important;
+  box-shadow: inset 0 0 0 50px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ----------------------------------------------------------- CONTROLS */
+.controls {
+  display: flex;
+}
+
+.control-group {
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  width: 140px;
+}
+
+.control-group > * {
+  margin: 3px 0;
+  padding: 2px 0;
+}
+
+label {
+  user-select: none;
+}
+
+input {
+  margin-right: 5px;
 }
 </style>
