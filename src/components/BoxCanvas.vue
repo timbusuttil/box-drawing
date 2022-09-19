@@ -23,6 +23,10 @@
       <label><input type="checkbox" v-model="showBorders">show cell borders</label>
       <button @click="center('horizontal')">center horizontally</button>
       <button @click="center('vertical')">center vertically</button>
+      <button @click="expandCanvas('top')">add top</button>
+      <button @click="expandCanvas('bottom')">add bottom</button>
+      <button @click="expandCanvas('left')">add left</button>
+      <button @click="expandCanvas('right')">add right</button>
     </div>
     <div class="control-group">
       <p>saving</p>
@@ -41,9 +45,20 @@ import html2canvas from 'html2canvas';
 export default {
   name: 'BoxCanvas',
   props: {
-    width: Number,
-    height: Number,
-    startData: Array,
+    initWidth: {
+      type: Number,
+      required: false,
+      default: 11
+    },
+    initHeight: {
+      type: Number,
+      required: false,
+      default: 5
+    },
+    initData: {
+      type: Array,
+      required: false
+    }
   },
   data() {
     return {
@@ -348,7 +363,6 @@ export default {
           let newContents = ' ';
           if (target[0] > -1 && target[0] < this.width) newContents = this.currentData[this.cellByCoords(...target)];
           tempArray[i] = newContents;
-          // console.log(cell, coords, newContents, target);
         });
       }
       if (direction === 'vertical' || direction === 'both') {
@@ -358,12 +372,29 @@ export default {
           let newContents = ' ';
           if (target[1] > -1 && target[1] < this.height) newContents = this.currentData[this.cellByCoords(...target)];
           tempArray[i] = newContents;
-          // console.log(cell, coords, newContents, target);
         });
       }
 
       // copy temp array to data
       this.currentData = tempArray;
+    },
+    expandCanvas(side) {
+      if (side === 'top' || side === 'bottom') {
+        this.height++;
+        const extraCells = Array(this.width).fill(' ');
+        if (side === 'top') {
+          this.currentData.unshift(...extraCells);
+        } else {
+          this.currentData.push(...extraCells);
+        }
+      } else if (side === 'left' || side === 'right') {
+        let x = side === 'left' ? 0 : this.width;
+        for (let y = this.height - 1; y >= 0; y--) {
+          const newIndex = this.cellByCoords(x, y);
+          this.currentData.splice(newIndex, 0, ' ');
+        }
+        this.width++;
+      }
     },
     async saveImage() {
       const el = document.getElementById('box-renderer');
@@ -391,8 +422,10 @@ export default {
   },
   mounted() {
     // init data
-    if (this.startData) {
-      this.currentData = this.startData;
+    this.width = this.initWidth;
+    this.height = this.initHeight;
+    if (this.initData) {
+      this.currentData = this.initData;
     } else {
       let vals = [];
       for (var i = 0; i < this.width * this.height; i++) {
