@@ -50,6 +50,11 @@ export default {
       hoveredCell: -1,
       selectedCells: [],
       lastSelected: -1,
+      clipboard: {
+        x: -1,
+        y: -1,
+        contents: []
+      },
       showBorders: false,
       colours: {
         bg: '#000000',
@@ -147,8 +152,7 @@ export default {
       if (e.key === 'Enter') { this.newline() } else
       if (e.key === 'Backspace') {
         e.preventDefault();
-        this.applyInput('DEL');
-        this.arrowNav('w')
+        this.applyInput('DEL', [], this.selectedCells.length === 1);
       } else
 
       // characters
@@ -160,10 +164,10 @@ export default {
         if (e.key === 'e') { this.applyInput('│') } else
         if (e.key === 'd') { this.applyInput('─') }
       } else if (this.mode ===  'text') {
-        if (e.key.length === 1) this.applyInput(e.key);
+        if (e.key.length === 1) this.applyInput(e.key, [], this.selectedCells.length === 1);
       }
     },
-    applyInput(input, targetCells = []) {
+    applyInput(input, targetCells = [], autoAdvance = false) {
       let parsedInput;
       if (input === 'DEL') {
         parsedInput = ' ';
@@ -180,7 +184,13 @@ export default {
           this.selectedCells.forEach((cell) => {
             if (cell > 0 && cell < this.currentData.length) this.currentData[cell] = parsedInput;
           });
-          if (this.mode === 'text' && input !== 'DEL' && this.selectedCells.length === 1) this.arrowNav('e');
+          if (autoAdvance) {
+            if (input === 'DEL') {
+              this.arrowNav('w');
+            } else {
+              this.arrowNav('e');
+            }
+          }
         } else if (this.hoveredCell !== -1) {
           this.currentData[this.hoveredCell] = parsedInput;
         }
@@ -264,13 +274,33 @@ export default {
       }
     },
     cut() {
-      console.log('todo: cut!');
+      this.copy();
+      this.applyInput(' ', [...this.selectedCells]);
     },
     copy() {
-      console.log('todo: copy!');
+      if (this.selectedCells.length > 0) {
+        // get coordinates of first point
+        const refCoords = this.coordsByCell(this.selectedCells[0]);
+        this.clipboard.x = refCoords[0];
+        this.clipboard.y = refCoords[1];
+        // populate contents array
+        this.clipboard.contents = this.selectedCells.map(cell => {
+          const coords = this.coordsByCell(cell);
+          return {
+            xoff: coords[0] - refCoords[0],
+            yoff: coords[1] - refCoords[1],
+            data: this.currentData[cell]
+          }
+        })
+      }
+      console.log(this.clipboard);
     },
     paste() {
-      console.log('todo: paste!');
+      if (this.selectedCells.length > 0 && this.clipboard.x !== -1) {
+        this.clipboard.contents.forEach((item) => {
+          this.applyInput(item.data, [this.lastSelected + item.xoff + (item.yoff * this.width)]);
+        });
+      }
     },
     newline() {
       this.selectedCells = [this.lastSelected + this.width];
