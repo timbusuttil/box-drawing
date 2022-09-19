@@ -207,7 +207,7 @@ export default {
       } else {
         if (this.selectedCells.length > 0) {
           this.selectedCells.forEach((cell) => {
-            if (cell > 0 && cell < this.currentData.length) this.currentData[cell] = parsedInput;
+            if (cell > -1 && cell < this.currentData.length) this.currentData[cell] = parsedInput;
           });
           if (autoAdvance) {
             if (input === 'DEL') {
