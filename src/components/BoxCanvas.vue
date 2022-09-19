@@ -10,7 +10,7 @@
     >{{ cell }}{{ needsNewline(i) ? '\n' : null }}</pre>
   </div>
   <!-- controls -->
-  <div class="controls">
+  <div class="controls" @click="selectedCells = []">
     <div class="control-group">
       <p>colours</p>
       <label><input type="color" v-model="colours.bg">bg col</label>
@@ -176,30 +176,35 @@ export default {
 
       if (targetCells.length > 0) {
         targetCells.forEach((cell) => {
-          this.currentData[cell] = parsedInput;
+          if (cell > 0 && cell < this.currentData.length) this.currentData[cell] = parsedInput;
         });
       } else {
         if (this.selectedCells.length > 0) {
           this.selectedCells.forEach((cell) => {
-            this.currentData[cell] = parsedInput;
+            if (cell > 0 && cell < this.currentData.length) this.currentData[cell] = parsedInput;
           });
-          if (this.mode === 'text' && input !== 'DEL') this.arrowNav('e');
+          if (this.mode === 'text' && input !== 'DEL' && this.selectedCells.length === 1) this.arrowNav('e');
         } else if (this.hoveredCell !== -1) {
           this.currentData[this.hoveredCell] = parsedInput;
         }
       }
     },
     arrowNav(direction) {
+      this.hoveredCell = -1;
       let dir = direction[0];
       let dist = 1;
       if (direction.length > 1) dist = direction[1];
+      this.selectedCells.forEach((cell, i) => {
+        if (dir === 'n') this.selectedCells[i] -= this.width * dist;
+        if (dir === 's') this.selectedCells[i] += this.width * dist;
+        if (dir === 'w') this.selectedCells[i] -= dist;
+        if (dir === 'e') this.selectedCells[i] += dist;
+      });
+      // clamp
       if (this.selectedCells.length === 1) {
-        if (dir === 'n') this.selectedCells[0] -= this.width * dist;
-        if (dir === 's') this.selectedCells[0] += this.width * dist;
-        if (dir === 'w') this.selectedCells[0] -= dist;
-        if (dir === 'e') this.selectedCells[0] += dist;
-        // clamp
         this.selectedCells[0] = Math.min(Math.max(this.selectedCells[0], 0), this.currentData.length - 1);
+      } else {
+        // deal with this case
       }
     },
     coordsByCell(i) {
