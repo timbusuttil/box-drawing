@@ -154,14 +154,11 @@ export default {
       // characters
       if (this.mode === 'borders') {
         if (e.key === 'q') { this.applyInput('╭') } else
-        if (e.key === 'w') { this.applyInput('─') } else
-        if (e.key === 'e') { this.applyInput('╮') } else
-        if (e.key === 'a') { this.applyInput('│') } else
-        if (e.key === 's') { this.applyInput('·') } else
-        if (e.key === 'd') { this.applyInput('│') } else
-        if (e.key === 'z') { this.applyInput('╰') } else
-        if (e.key === 'x') { this.applyInput('─') } else
-        if (e.key === 'c') { this.applyInput('╯') }
+        if (e.key === 'w') { this.applyInput('╮') } else
+        if (e.key === 'a') { this.applyInput('╰') } else
+        if (e.key === 's') { this.applyInput('╯') } else
+        if (e.key === 'e') { this.applyInput('│') } else
+        if (e.key === 'd') { this.applyInput('─') }
       } else if (this.mode ===  'text') {
         if (e.key.length === 1) this.applyInput(e.key);
       }
