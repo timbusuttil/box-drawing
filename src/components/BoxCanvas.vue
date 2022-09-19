@@ -128,6 +128,9 @@ export default {
         this.hoveredCell = i;
       }
     },
+    handleClick(e) {
+      if (e.target.tagName !== 'PRE') this.selectedCells = [];
+    },
     handleKey(e) {
       // console.log(e.key);
       // toggle modes
@@ -351,9 +354,11 @@ export default {
 
     // key event listener
     document.addEventListener('keydown', this.handleKey)
+    document.addEventListener('pointerdown', this.handleClick);
   },
   unmounted() {
     document.removeEventListener('keydown', this.handleKey)
+    document.removeEventListener('pointerdown', this.handleClick);
   }
 }
 </script>
