@@ -19,8 +19,10 @@
       <button @click="setColorsFromPresets">random preset</button>
     </div>
     <div class="control-group">
-      <p>debug</p>
+      <p>canvas</p>
       <label><input type="checkbox" v-model="showBorders">show cell borders</label>
+      <button @click="center('horizontal')">center horizontally</button>
+      <button @click="center('vertical')">center vertically</button>
     </div>
     <div class="control-group">
       <p>saving</p>
@@ -149,16 +151,13 @@ export default {
       if (e.key === 'ArrowLeft') { this.arrowNav('w') } else
       if (e.key === 'ArrowRight') { this.arrowNav('e') } else
       if (e.key === 'Escape') { this.selectedCells = [] } else
-      if (e.key === 'a' && e.metaKey) { this.selectAll() } else
+      if (e.key === 'a' && e.metaKey) { e.preventDefault(); this.selectAll() } else
       if (e.key === 'b' && e.metaKey) { this.boxShortcut() } else
       if (e.key === 'x' && e.metaKey) { this.cut() } else
       if (e.key === 'c' && e.metaKey) { this.copy() } else
       if (e.key === 'v' && e.metaKey) { this.paste() } else
       if (e.key === 'Enter') { this.newline() } else
-      if (e.key === 'Backspace') {
-        e.preventDefault();
-        this.applyInput('DEL', [], this.selectedCells.length === 1);
-      } else
+      if (e.key === 'Backspace') { e.preventDefault(); this.applyInput('DEL', [], this.selectedCells.length === 1) } else
 
       // characters
       if (this.mode === 'borders') {
@@ -255,29 +254,30 @@ export default {
         const boxWidth = maxX - minX;
         const boxHeight = maxY - minY;
 
-        // if 1 cell vertical but >1 horizontal, draw row?
-        // if 1 cell horizontal but >1 vertical, draw column?
-        // if >1 both, draw box
-        if (boxWidth > 1 &&  boxHeight > 1) {
-          // corners
-          this.applyInput('╭', [this.cellByCoords(minX, minY)]);
-          this.applyInput('╮', [this.cellByCoords(maxX, minY)]);
-          this.applyInput('╰', [this.cellByCoords(minX, maxY)]);
-          this.applyInput('╯', [this.cellByCoords(maxX, maxY)]);
-          // top/bottom
+        // top/bottom
+        if (boxWidth > 1) {
           let hCells = [];
-          for (let x = 1; x < boxWidth; x++) {
+          for (let x = 0; x <= boxWidth; x++) {
             hCells.push(this.cellByCoords(minX + x, minY));
             hCells.push(this.cellByCoords(minX + x, maxY));
           }
           this.applyInput('─', hCells);
-          // left/right
+        }
+        // left/right
+        if (boxHeight > 1) {
           let vCells = [];
-          for (let y = 1; y < boxHeight; y++) {
+          for (let y = 0; y <= boxHeight; y++) {
             vCells.push(this.cellByCoords(minX, minY + y));
             vCells.push(this.cellByCoords(maxX, minY + y));
           }
           this.applyInput('│', vCells);
+        }
+        // corners
+        if (boxWidth >= 1 && boxHeight >= 1) {
+          this.applyInput('╭', [this.cellByCoords(minX, minY)]);
+          this.applyInput('╮', [this.cellByCoords(maxX, minY)]);
+          this.applyInput('╰', [this.cellByCoords(minX, maxY)]);
+          this.applyInput('╯', [this.cellByCoords(maxX, maxY)]);
         }
       }
     },
@@ -304,14 +304,65 @@ export default {
     },
     paste() {
       if (this.selectedCells.length > 0 && this.clipboard.x !== -1) {
+        const startCell = this.selectedCells.length === 1 ? this.selectedCells[0] : this.lastSelected;
         this.clipboard.contents.forEach((item) => {
-          this.applyInput(item.data, [this.lastSelected + item.xoff + (item.yoff * this.width)]);
+          this.applyInput(item.data, [startCell + item.xoff + (item.yoff * this.width)]);
         });
       }
     },
     newline() {
       this.selectedCells = [this.lastSelected + this.width];
       this.lastSelected = this.selectedCells[0];
+    },
+    center(direction) {
+      // get bounds of non-blank cells
+      // and create temp array
+      let minX = 999;
+      let minY = 999;
+      let maxX = -1;
+      let maxY = -1;
+      let tempArray = [];
+      this.currentData.forEach((cell, i) => {
+        tempArray.push(' ');
+        if (cell !== ' ') {
+          const coords = this.coordsByCell(i);
+          if (coords[0] < minX) minX = coords[0];
+          if (coords[0] < minY) minY = coords[1];
+          if (coords[0] > maxX) maxX = coords[0];
+          if (coords[0] > maxY) maxY = coords[1];
+        }
+      });
+
+      // calc distance to move in both directions
+      const boxWidth = 1 + maxX - minX;
+      const boxHeight = 1 + maxY - minY;
+      const distX = minX - Math.floor((this.width - boxWidth) / 2);
+      const distY = minY - Math.floor((this.height - boxHeight) / 2);
+
+      // copy contents across based on direction
+      if (direction === 'horizontal' || direction === 'both') {
+        this.currentData.forEach((cell, i) => {
+          const coords = this.coordsByCell(i);
+          const target = [coords[0] + distX, coords[1]];
+          let newContents = ' ';
+          if (target[0] > -1 && target[0] < this.width) newContents = this.currentData[this.cellByCoords(...target)];
+          tempArray[i] = newContents;
+          // console.log(cell, coords, newContents, target);
+        });
+      }
+      if (direction === 'vertical' || direction === 'both') {
+        this.currentData.forEach((cell, i) => {
+          const coords = this.coordsByCell(i);
+          const target = [coords[0], coords[1] + distY];
+          let newContents = ' ';
+          if (target[1] > -1 && target[1] < this.height) newContents = this.currentData[this.cellByCoords(...target)];
+          tempArray[i] = newContents;
+          // console.log(cell, coords, newContents, target);
+        });
+      }
+
+      // copy temp array to data
+      this.currentData = tempArray;
     },
     async saveImage() {
       const el = document.getElementById('box-renderer');
