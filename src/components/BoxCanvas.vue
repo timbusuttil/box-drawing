@@ -1,6 +1,6 @@
 <template>
   <!-- canvas -->
-  <div class="box-renderer" @mouseleave="hoverCell(-1)">
+  <div id="box-renderer" :style="rendererStyle" @mouseleave="hoverCell(-1)">
     <pre
       v-for="(cell, i) in currentData" :key="i"
       :class="cellClasses(i)"
@@ -20,11 +20,15 @@
     <div class="control-group">
       <label><input type="checkbox" v-model="showBorders">show cell borders</label>
     </div>
+    <div class="control-group">
+      <button @click="saveImage">save image (wip)</button>
+    </div>
   </div>
 </template>
 
 <script>
 import { presets } from '@/assets/colours.js';
+import html2canvas from 'html2canvas';
 
 export default {
   name: 'BoxCanvas',
@@ -55,6 +59,13 @@ export default {
       return {
         background: cols[0],
         color: cols[1]
+      }
+    },
+    rendererStyle() {
+      let cols = [this.colours.bg, this.colours.fg];
+      if (this.colours.flipped) cols = cols.reverse();
+      return {
+        background: cols[0]
       }
     }
   },
@@ -253,6 +264,16 @@ export default {
     newline() {
       this.selectedCells = [this.lastSelected + this.width];
       this.lastSelected = this.selectedCells[0];
+    },
+    saveImage() {
+      const el = document.getElementById('box-renderer');
+      html2canvas(el).then((canvas) => {
+        // document.body.appendChild(canvas);
+        let anchor = document.createElement('a');
+        anchor.href = canvas.toDataURL('image/png');
+        anchor.download = 'box-drawing-download.png';
+        anchor.click();
+      });
     }
   },
   mounted() {
@@ -281,7 +302,7 @@ export default {
 
 <style scoped>
 /* ----------------------------------------------------------- CANVAS */
-.box-renderer {
+#box-renderer {
   border: 1px solid rgba(0, 0, 0, 0.25);
   width: fit-content;
   border-radius: 8px;
@@ -317,10 +338,21 @@ pre.selected {
 }
 
 .control-group {
-  padding: 10px 0;
+  padding: 8px;
+  border-radius: 8px;
+  margin: 8px 4px;
   display: flex;
   flex-direction: column;
   width: 140px;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+.control-group:first-of-type {
+  margin-left: 0;
+}
+
+.control-group:last-of-type {
+  margin-right: 0;
 }
 
 .control-group > * {
