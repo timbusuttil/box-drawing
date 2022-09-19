@@ -219,7 +219,7 @@ export default {
 
       if (targetCells.length > 0) {
         targetCells.forEach((cell) => {
-          if (cell > 0 && cell < this.currentData.length) this.currentData[cell] = parsedInput;
+          if (cell > -1 && cell < this.currentData.length) this.currentData[cell] = parsedInput;
         });
       } else {
         if (this.selectedCells.length > 0) {
@@ -283,9 +283,9 @@ export default {
         this.selectedCells.forEach((cell) => {
           const coords = this.coordsByCell(cell);
           if (coords[0] < minX) minX = coords[0];
-          if (coords[0] < minY) minY = coords[1];
+          if (coords[1] < minY) minY = coords[1];
           if (coords[0] > maxX) maxX = coords[0];
-          if (coords[0] > maxY) maxY = coords[1];
+          if (coords[1] > maxY) maxY = coords[1];
         });
         const boxWidth = maxX - minX;
         const boxHeight = maxY - minY;
