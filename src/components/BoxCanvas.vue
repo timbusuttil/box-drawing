@@ -79,7 +79,6 @@ export default {
     },
     selectArea(cell1, cell2) {
       this.selectedCells = [];
-
       const co1 = this.coordsByCell(cell1);
       const co2 = this.coordsByCell(cell2);
       const sX = Math.min(co1[0], co2[0]);
@@ -93,10 +92,6 @@ export default {
           this.selectedCells.push(this.cellByCoords(sX + x, sY + y))
         }
       }
-      console.log('----');
-
-      // this.selectedCells = [1, 2, 3, 1+this.width, 2+this.width, 3+this.width];
-      // this.selectedCells = [cell1, cell2];
     },
     hoverCell(i, e) {
       if (e && e.buttons > 0) {
@@ -123,6 +118,10 @@ export default {
       if (e.key === 'ArrowLeft') { this.arrowNav('w') } else
       if (e.key === 'ArrowRight') { this.arrowNav('e') } else
       if (e.key === 'Escape') { this.selectedCells = [] } else
+      if (e.key === 'b' && e.metaKey) { this.boxShortcut() } else
+      if (e.key === 'x' && e.metaKey) { this.cut() } else
+      if (e.key === 'c' && e.metaKey) { this.copy() } else
+      if (e.key === 'v' && e.metaKey) { this.paste() } else
       if (e.key === 'Backspace') {
         e.preventDefault();
         this.applyInput('DEL');
@@ -144,7 +143,7 @@ export default {
         if (e.key.length === 1) this.applyInput(e.key);
       }
     },
-    applyInput(input) {
+    applyInput(input, targetCells = []) {
       let parsedInput;
       if (input === 'DEL') {
         parsedInput = ' ';
@@ -152,13 +151,19 @@ export default {
         parsedInput = input;
       }
 
-      if (this.selectedCells.length > 0) {
-        this.selectedCells.forEach((cell) => {
+      if (targetCells.length > 0) {
+        targetCells.forEach((cell) => {
           this.currentData[cell] = parsedInput;
         });
-        if (this.mode === 'text' && input !== 'DEL') this.arrowNav('e');
-      } else if (this.hoveredCell !== -1) {
-        this.currentData[this.hoveredCell] = parsedInput;
+      } else {
+        if (this.selectedCells.length > 0) {
+          this.selectedCells.forEach((cell) => {
+            this.currentData[cell] = parsedInput;
+          });
+          if (this.mode === 'text' && input !== 'DEL') this.arrowNav('e');
+        } else if (this.hoveredCell !== -1) {
+          this.currentData[this.hoveredCell] = parsedInput;
+        }
       }
     },
     arrowNav(direction) {
@@ -190,6 +195,59 @@ export default {
       console.log(this.colours.fg);
       this.colours.fg = presets[i].fg;
       this.colours.bg = presets[i].bg;
+    },
+    boxShortcut() {
+      console.log('todo: box!');
+      if (this.selectedCells.length > 1) {
+        // get min & max width & height
+        let minX = 999;
+        let minY = 999;
+        let maxX = -1;
+        let maxY = -1;
+        this.selectedCells.forEach((cell) => {
+          const coords = this.coordsByCell(cell);
+          if (coords[0] < minX) minX = coords[0];
+          if (coords[0] < minY) minY = coords[1];
+          if (coords[0] > maxX) maxX = coords[0];
+          if (coords[0] > maxY) maxY = coords[1];
+        });
+        const boxWidth = maxX - minX;
+        const boxHeight = maxY - minY;
+
+        // if 1 cell vertical but >1 horizontal, draw row?
+        // if 1 cell horizontal but >1 vertical, draw column?
+        // if >1 both, draw box
+        if (boxWidth > 1 &&  boxHeight > 1) {
+          // corners
+          this.applyInput('╭', [this.cellByCoords(minX, minY)]);
+          this.applyInput('╮', [this.cellByCoords(maxX, minY)]);
+          this.applyInput('╰', [this.cellByCoords(minX, maxY)]);
+          this.applyInput('╯', [this.cellByCoords(maxX, maxY)]);
+          // top/bottom
+          let hCells = [];
+          for (let x = 1; x < boxWidth; x++) {
+            hCells.push(this.cellByCoords(minX + x, minY));
+            hCells.push(this.cellByCoords(minX + x, maxY));
+          }
+          this.applyInput('─', hCells);
+          // left/right
+          let vCells = [];
+          for (let y = 1; y < boxHeight; y++) {
+            vCells.push(this.cellByCoords(minX, minY + y));
+            vCells.push(this.cellByCoords(maxX, minY + y));
+          }
+          this.applyInput('│', vCells);
+        }
+      }
+    },
+    cut() {
+      console.log('todo: cut!');
+    },
+    copy() {
+      console.log('todo: copy!');
+    },
+    paste() {
+      console.log('todo: paste!');
     }
   },
   mounted() {
@@ -209,6 +267,9 @@ export default {
 
     // key event listener
     document.addEventListener('keydown', this.handleKey)
+  },
+  unmounted() {
+    document.removeEventListener('keydown', this.handleKey)
   }
 }
 </script>
