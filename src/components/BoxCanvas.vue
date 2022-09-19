@@ -121,7 +121,10 @@ export default {
           this.selectedCells.push(this.cellByCoords(sX + x, sY + y))
         }
       }
-      this.selectedCells = [...new Set(this.selectedCells)];
+      this.selectedCells = this.deduplicate(this.selectedCells);
+    },
+    deduplicate(array) {
+      return [...new Set(array)];
     },
     hoverCell(i, e) {
       if (e && e.buttons > 0) {
@@ -214,8 +217,6 @@ export default {
       // clamp
       if (this.selectedCells.length === 1) {
         this.selectedCells[0] = Math.min(Math.max(this.selectedCells[0], 0), this.currentData.length - 1);
-      } else {
-        // deal with this case
       }
     },
     coordsByCell(i) {
