@@ -122,6 +122,7 @@ export default {
       if (e.key === 'x' && e.metaKey) { this.cut() } else
       if (e.key === 'c' && e.metaKey) { this.copy() } else
       if (e.key === 'v' && e.metaKey) { this.paste() } else
+      if (e.key === 'Enter') { this.newline() } else
       if (e.key === 'Backspace') {
         e.preventDefault();
         this.applyInput('DEL');
@@ -248,6 +249,10 @@ export default {
     },
     paste() {
       console.log('todo: paste!');
+    },
+    newline() {
+      this.selectedCells = [this.lastSelected + this.width];
+      this.lastSelected = this.selectedCells[0];
     }
   },
   mounted() {
