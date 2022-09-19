@@ -255,7 +255,7 @@ export default {
         const boxHeight = maxY - minY;
 
         // top/bottom
-        if (boxWidth > 1) {
+        if (boxWidth >= 1) {
           let hCells = [];
           for (let x = 0; x <= boxWidth; x++) {
             hCells.push(this.cellByCoords(minX + x, minY));
@@ -264,7 +264,7 @@ export default {
           this.applyInput('─', hCells);
         }
         // left/right
-        if (boxHeight > 1) {
+        if (boxHeight >= 1) {
           let vCells = [];
           for (let y = 0; y <= boxHeight; y++) {
             vCells.push(this.cellByCoords(minX, minY + y));
