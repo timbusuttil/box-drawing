@@ -21,6 +21,7 @@
     <div class="control-group">
       <p>canvas</p>
       <label><input type="checkbox" v-model="showBorders">show cell borders</label>
+      <label><input class="long-label" type="number" v-model="fontSize">cell size</label>
       <button @click="center('horizontal')">center horizontally</button>
       <button @click="center('vertical')">center vertically</button>
       <button @click="expandCanvas('top')">add top</button>
@@ -73,6 +74,7 @@ export default {
         contents: []
       },
       showBorders: false,
+      fontSize: 50,
       colours: {
         bg: '#000000',
         fg: '#0000ff',
@@ -91,7 +93,8 @@ export default {
       if (this.colours.flipped) cols = cols.reverse();
       return {
         background: cols[0],
-        color: cols[1]
+        color: cols[1],
+        fontSize: `${this.fontSize}px`
       }
     },
     rendererStyle() {
@@ -460,7 +463,6 @@ export default {
 /* ----------------------------------------------------------- CELLS */
 pre {
   font-family: 'Menlo';
-  font-size: 50px;
   width: fit-content;
   margin: 0;
   display: inline;
@@ -515,6 +517,10 @@ label {
 input {
   margin-right: 5px;
   width: calc(100% - 50px);
+}
+
+input.long-label {
+  width: calc(100% - 70px);
 }
 
 input[type='checkbox'] {
