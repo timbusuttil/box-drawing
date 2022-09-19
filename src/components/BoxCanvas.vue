@@ -104,8 +104,8 @@ export default {
         this.selectedCells = [i];
       }
     },
-    selectArea(cell1, cell2) {
-      this.selectedCells = [];
+    selectArea(cell1, cell2, shift) {
+      if (!shift) this.selectedCells = [];
       const co1 = this.coordsByCell(cell1);
       const co2 = this.coordsByCell(cell2);
       const sX = Math.min(co1[0], co2[0]);
@@ -119,10 +119,11 @@ export default {
           this.selectedCells.push(this.cellByCoords(sX + x, sY + y))
         }
       }
+      this.selectedCells = [...new Set(this.selectedCells)];
     },
     hoverCell(i, e) {
       if (e && e.buttons > 0) {
-        this.selectArea(this.lastSelected, i);
+        this.selectArea(this.lastSelected, i, e.shiftKey);
       } else {
         this.hoveredCell = i;
       }
@@ -297,7 +298,6 @@ export default {
           }
         })
       }
-      console.log(this.clipboard);
     },
     paste() {
       if (this.selectedCells.length > 0 && this.clipboard.x !== -1) {
