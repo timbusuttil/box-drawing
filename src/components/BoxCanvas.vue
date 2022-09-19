@@ -145,6 +145,7 @@ export default {
       if (e.key === 'ArrowLeft') { this.arrowNav('w') } else
       if (e.key === 'ArrowRight') { this.arrowNav('e') } else
       if (e.key === 'Escape') { this.selectedCells = [] } else
+      if (e.key === 'a' && e.metaKey) { this.selectAll() } else
       if (e.key === 'b' && e.metaKey) { this.boxShortcut() } else
       if (e.key === 'x' && e.metaKey) { this.cut() } else
       if (e.key === 'c' && e.metaKey) { this.copy() } else
@@ -229,6 +230,9 @@ export default {
       this.colours.lastPreset = i;
       this.colours.fg = presets[i].fg;
       this.colours.bg = presets[i].bg;
+    },
+    selectAll() {
+      this.selectedCells = this.currentData.map((cell, i) => i)
     },
     boxShortcut() {
       if (this.selectedCells.length > 1) {
