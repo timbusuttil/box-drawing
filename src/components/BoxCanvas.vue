@@ -24,10 +24,27 @@
       <label><input class="long-label" type="number" v-model="fontSize">cell size</label>
       <button @click="center('horizontal')">center horizontally</button>
       <button @click="center('vertical')">center vertically</button>
-      <button @click="expandCanvas('top')">add top</button>
-      <button @click="expandCanvas('bottom')">add bottom</button>
-      <button @click="expandCanvas('left')">add left</button>
-      <button @click="expandCanvas('right')">add right</button>
+      <div class="two-buttons">
+        <button @click="changeCanvasSize('remove', 'top')">-</button>
+        <label>top</label>
+        <button @click="changeCanvasSize('add', 'top')">+</button>
+      </div>
+      <div class="two-buttons">
+        <button @click="changeCanvasSize('remove', 'bottom')">-</button>
+        <label>bottom</label>
+        <button @click="changeCanvasSize('add', 'bottom')">+</button>
+      </div>
+      <div class="two-buttons">
+        <button @click="changeCanvasSize('remove', 'left')">-</button>
+        <label>left</label>
+        <button @click="changeCanvasSize('add', 'left')">+</button>
+      </div>
+      <div class="two-buttons">
+        <button @click="changeCanvasSize('remove', 'right')">-</button>
+        <label>right</label>
+        <button @click="changeCanvasSize('add', 'right')">+</button>
+      </div>
+
     </div>
     <div class="control-group">
       <p>saving</p>
@@ -381,22 +398,40 @@ export default {
       // copy temp array to data
       this.currentData = tempArray;
     },
-    expandCanvas(side) {
+    changeCanvasSize(mode, side) {
       if (side === 'top' || side === 'bottom') {
         this.height++;
         const extraCells = Array(this.width).fill(' ');
-        if (side === 'top') {
-          this.currentData.unshift(...extraCells);
-        } else {
-          this.currentData.push(...extraCells);
+        if (mode === 'add') {
+          if (side === 'top') {
+            this.currentData.unshift(...extraCells);
+          } else {
+            this.currentData.push(...extraCells);
+          }
+        } else if (mode === 'remove') {
+          if (side === 'top') {
+            this.currentData.splice(0, this.width);
+            this.height--;
+          } else {
+            this.currentData.splice(this.currentData.length - this.width, this.width);
+            this.height--;
+          }
         }
       } else if (side === 'left' || side === 'right') {
         let x = side === 'left' ? 0 : this.width;
         for (let y = this.height - 1; y >= 0; y--) {
           const newIndex = this.cellByCoords(x, y);
-          this.currentData.splice(newIndex, 0, ' ');
+          if (mode === 'add') {
+            this.currentData.splice(newIndex, 0, ' ');
+          } else if (mode === 'remove') {
+            this.currentData.splice(newIndex-1, 1);
+          }
         }
-        this.width++;
+        if (mode === 'add') {
+          this.width++;
+        } else if (mode === 'remove') {
+          this.width--;
+        }
       }
     },
     async saveImage() {
@@ -514,6 +549,20 @@ label {
   user-select: none;
 }
 
+div.two-buttons {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+}
+
+div.two-buttons button {
+  width: 28%;
+}
+
+div.two-buttons label {
+  flex-grow: 1;
+}
+
 input {
   margin-right: 5px;
   width: calc(100% - 50px);
@@ -525,5 +574,9 @@ input.long-label {
 
 input[type='checkbox'] {
   width: unset;
+}
+
+button.short-button {
+  width: 40px;
 }
 </style>
