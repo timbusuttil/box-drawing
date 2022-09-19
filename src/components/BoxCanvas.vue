@@ -12,21 +12,27 @@
   <!-- controls -->
   <div class="controls">
     <div class="control-group">
+      <p>colours</p>
       <label><input type="color" v-model="colours.bg">bg col</label>
       <label><input type="color" v-model="colours.fg">fg col</label>
       <label><input type="checkbox" v-model="colours.flipped">flip fg/bg</label>
       <button @click="setColorsFromPresets">random preset</button>
     </div>
     <div class="control-group">
+      <p>debug</p>
       <label><input type="checkbox" v-model="showBorders">show cell borders</label>
     </div>
     <div class="control-group">
-      <button @click="saveImage">save image (wip)</button>
+      <p>saving</p>
+      <label><input type="text" v-model="image.name">name</label>
+      <label><input type="number" v-model="image.scale">scale</label>
+      <button @click="saveImage">save image</button>
     </div>
   </div>
 </template>
 
 <script>
+import { nextTick } from 'vue';
 import { presets } from '@/assets/colours.js';
 import html2canvas from 'html2canvas';
 
@@ -49,6 +55,11 @@ export default {
         bg: '#000000',
         fg: '#0000ff',
         flipped: false,
+        lastPreset: -1,
+      },
+      image: {
+        name: 'untitled',
+        scale: 2,
       }
     }
   },
@@ -112,7 +123,7 @@ export default {
       }
     },
     handleKey(e) {
-      console.log(e.key);
+      // console.log(e.key);
       // toggle modes
       if (e.key === 'Tab') {
         if (this.mode === 'borders') {
@@ -202,14 +213,12 @@ export default {
     },
     setColorsFromPresets() {
       let i = Math.floor(Math.random() * presets.length);
-      console.log(i);
-      console.log(presets[i]);
-      console.log(this.colours.fg);
+      if (i === this.colours.lastPreset) i++;
+      this.colours.lastPreset = i;
       this.colours.fg = presets[i].fg;
       this.colours.bg = presets[i].bg;
     },
     boxShortcut() {
-      console.log('todo: box!');
       if (this.selectedCells.length > 1) {
         // get min & max width & height
         let minX = 999;
@@ -265,13 +274,26 @@ export default {
       this.selectedCells = [this.lastSelected + this.width];
       this.lastSelected = this.selectedCells[0];
     },
-    saveImage() {
+    async saveImage() {
       const el = document.getElementById('box-renderer');
-      html2canvas(el).then((canvas) => {
-        // document.body.appendChild(canvas);
+      const border = getComputedStyle(el)['border'];
+      const radius = getComputedStyle(el)['border-radius'];
+      const selection = this.selectedCells;
+      el.style.border = 'none';
+      el.style.borderRadius = 0;
+      this.selectedCells = [];
+      await nextTick();
+
+      html2canvas(el, {
+        scale: this.image.scale
+      }).then((canvas) => {
+        el.style.border = border;
+        el.style.borderRadius = radius;
+        this.selectedCells = selection;
+
         let anchor = document.createElement('a');
         anchor.href = canvas.toDataURL('image/png');
-        anchor.download = 'box-drawing-download.png';
+        anchor.download = `${this.image.name}.png`;
         anchor.click();
       });
     }
@@ -366,5 +388,10 @@ label {
 
 input {
   margin-right: 5px;
+  width: calc(100% - 50px);
+}
+
+input[type='checkbox'] {
+  width: unset;
 }
 </style>
