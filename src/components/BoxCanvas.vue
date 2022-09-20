@@ -101,7 +101,9 @@ export default {
       image: {
         name: 'untitled',
         scale: 2,
-      }
+      },
+      editBuffer: [],
+      bufferPosition: -1,
     }
   },
   computed: {
@@ -194,6 +196,9 @@ export default {
       if (e.key === 'x' && e.metaKey) { this.cut() } else
       if (e.key === 'c' && e.metaKey) { this.copy() } else
       if (e.key === 'v' && e.metaKey) { this.paste() } else
+      if (e.key === 'z' && e.metaKey && !e.shiftKey) { this.undo() } else
+      if (e.key === 'y' && e.metaKey) { this.redo() } else
+      if (e.key === 'z' && e.metaKey && e.shiftKey) { this.redo() } else
       if (e.key === 'Enter') { this.newline() } else
       if (e.key === 'Backspace') { e.preventDefault(); this.applyInput('DEL', [], this.selectedCells.length === 1) } else
 
@@ -210,6 +215,7 @@ export default {
       }
     },
     applyInput(input, targetCells = [], autoAdvance = false) {
+      const bufferIndex = this.editBuffer.length;
       let parsedInput;
       if (input === 'DEL') {
         parsedInput = ' ';
@@ -219,12 +225,18 @@ export default {
 
       if (targetCells.length > 0) {
         targetCells.forEach((cell) => {
-          if (cell > -1 && cell < this.currentData.length) this.currentData[cell] = parsedInput;
+          if (cell > -1 && cell < this.currentData.length) {
+            this.pushToEditBuffer(bufferIndex, cell, this.currentData[cell], parsedInput);
+            this.currentData[cell] = parsedInput;
+          }
         });
       } else {
         if (this.selectedCells.length > 0) {
           this.selectedCells.forEach((cell) => {
-            if (cell > -1 && cell < this.currentData.length) this.currentData[cell] = parsedInput;
+            if (cell > -1 && cell < this.currentData.length) {
+              this.pushToEditBuffer(bufferIndex, cell, this.currentData[cell], parsedInput);
+              this.currentData[cell] = parsedInput;
+            }
           });
           if (autoAdvance) {
             if (input === 'DEL') {
@@ -234,6 +246,7 @@ export default {
             }
           }
         } else if (this.hoveredCell !== -1) {
+          this.pushToEditBuffer(bufferIndex, this.hoveredCell, this.currentData[this.hoveredCell], parsedInput);
           this.currentData[this.hoveredCell] = parsedInput;
         }
       }
@@ -350,6 +363,41 @@ export default {
       this.selectedCells = [this.lastSelected + this.width];
       this.lastSelected = this.selectedCells[0];
     },
+    undo() {
+      this.applyBuffer(this.bufferPosition, 'undo');
+    },
+    redo() {
+      this.applyBuffer(this.bufferPosition, 'redo');
+    },
+    applyBuffer(position, direction, advance = true) {
+      let bufferPosition, advanceAmt, applyKey;
+      if (direction === 'undo') {
+        bufferPosition = position;
+        advanceAmt = -1;
+        applyKey = 'before';
+      } else if (direction === 'redo') {
+        bufferPosition = position + 1;
+        advanceAmt = +1;
+        applyKey = 'after';
+      }
+      if (this.editBuffer[bufferPosition] !== undefined) {
+        this.editBuffer[bufferPosition].forEach((edit) => {
+          this.currentData[edit.cell] = edit[applyKey];
+        });
+        if (advance) {
+          this.bufferPosition += advanceAmt;
+        }
+      }
+    },
+    pushToEditBuffer(bufferIndex, cell, before, after) {
+      if (this.editBuffer[bufferIndex] === undefined) {
+        this.editBuffer[bufferIndex] = [];
+        this.bufferPosition = bufferIndex;
+      }
+      if (before !== after) {
+        this.editBuffer[bufferIndex].push({ cell, before, after });
+      }
+    },
     center(direction) {
       // get bounds of non-blank cells
       // and create temp array
@@ -396,7 +444,12 @@ export default {
       }
 
       // copy temp array to data
-      this.currentData = tempArray;
+      const bufferIndex = this.editBuffer.length;
+      tempArray.forEach((cell, i) => {
+        this.pushToEditBuffer(bufferIndex, i, this.currentData[i], cell);
+        this.currentData[i] = cell;
+      });
+      // this.currentData = tempArray;
     },
     changeCanvasSize(mode, side) {
       if (side === 'top' || side === 'bottom') {
