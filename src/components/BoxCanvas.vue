@@ -58,6 +58,7 @@
 <script>
 import { nextTick } from 'vue';
 import { presets } from '@/assets/colours.js';
+import { cloneArray } from '@/utils/utils.js';
 import html2canvas from 'html2canvas';
 
 export default {
@@ -197,7 +198,7 @@ export default {
       if (e.key === 'c' && e.metaKey) { this.copy() } else
       if (e.key === 'v' && e.metaKey) { this.paste() } else
       if (e.key === 'z' && e.metaKey && !e.shiftKey) { this.undo() } else
-      if (e.key === 'y' && e.metaKey) { this.redo() } else
+      if (e.key === 'y' && e.metaKey) { e.preventDefault(); this.redo() } else
       if (e.key === 'z' && e.metaKey && e.shiftKey) { this.redo() } else
       if (e.key === 'Enter') { this.newline() } else
       if (e.key === 'Backspace') { e.preventDefault(); this.applyInput('DEL', [], this.selectedCells.length === 1) } else
@@ -214,8 +215,8 @@ export default {
         if (e.key.length === 1) this.applyInput(e.key, [], this.selectedCells.length === 1);
       }
     },
-    applyInput(input, targetCells = [], autoAdvance = false) {
-      const bufferIndex = this.editBuffer.length;
+    applyInput(input, targetCells = [], autoAdvance = false, useLastBufferIndex = false) {
+      const bufferIndex = useLastBufferIndex ? this.editBuffer.length - 1 : this.editBuffer.length;
       let parsedInput;
       if (input === 'DEL') {
         parsedInput = ' ';
@@ -303,6 +304,8 @@ export default {
         const boxWidth = maxX - minX;
         const boxHeight = maxY - minY;
 
+        // dummy input for edit buffer
+        this.applyInput('!', [this.cellByCoords(minX, minY)]);
         // top/bottom
         if (boxWidth >= 1) {
           let hCells = [];
@@ -310,7 +313,7 @@ export default {
             hCells.push(this.cellByCoords(minX + x, minY));
             hCells.push(this.cellByCoords(minX + x, maxY));
           }
-          this.applyInput('─', hCells);
+          this.applyInput('─', hCells, false, true);
         }
         // left/right
         if (boxHeight >= 1) {
@@ -319,14 +322,14 @@ export default {
             vCells.push(this.cellByCoords(minX, minY + y));
             vCells.push(this.cellByCoords(maxX, minY + y));
           }
-          this.applyInput('│', vCells);
+          this.applyInput('│', vCells, false, true);
         }
         // corners
         if (boxWidth >= 1 && boxHeight >= 1) {
-          this.applyInput('╭', [this.cellByCoords(minX, minY)]);
-          this.applyInput('╮', [this.cellByCoords(maxX, minY)]);
-          this.applyInput('╰', [this.cellByCoords(minX, maxY)]);
-          this.applyInput('╯', [this.cellByCoords(maxX, maxY)]);
+          this.applyInput('╭', [this.cellByCoords(minX, minY)], false, true);
+          this.applyInput('╮', [this.cellByCoords(maxX, minY)], false, true);
+          this.applyInput('╰', [this.cellByCoords(minX, maxY)], false, true);
+          this.applyInput('╯', [this.cellByCoords(maxX, maxY)], false, true);
         }
       }
     },
@@ -354,8 +357,8 @@ export default {
     paste() {
       if (this.selectedCells.length > 0 && this.clipboard.x !== -1) {
         const startCell = this.selectedCells.length === 1 ? this.selectedCells[0] : this.lastSelected;
-        this.clipboard.contents.forEach((item) => {
-          this.applyInput(item.data, [startCell + item.xoff + (item.yoff * this.width)]);
+        this.clipboard.contents.forEach((item, i) => {
+          this.applyInput(item.data, [startCell + item.xoff + (item.yoff * this.width)], false, i !== 0);
         });
       }
     },
@@ -380,8 +383,13 @@ export default {
         advanceAmt = +1;
         applyKey = 'after';
       }
+      console.log('---');
       if (this.editBuffer[bufferPosition] !== undefined) {
-        this.editBuffer[bufferPosition].forEach((edit) => {
+        const edits = cloneArray(this.editBuffer[bufferPosition]);
+        if (direction === 'undo') edits.reverse();
+        console.log(`set to ${applyKey}`);
+        edits.forEach((edit) => {
+          console.log(edit);
           this.currentData[edit.cell] = edit[applyKey];
         });
         if (advance) {
