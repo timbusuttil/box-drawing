@@ -216,7 +216,8 @@ export default {
       }
     },
     applyInput(input, targetCells = [], autoAdvance = false, useLastBufferIndex = false) {
-      const bufferIndex = useLastBufferIndex ? this.editBuffer.length - 1 : this.editBuffer.length;
+      const bufferIndex = useLastBufferIndex ? this.bufferPosition : this.bufferPosition + 1;
+      const trimBufferAfter = !useLastBufferIndex;
       let parsedInput;
       if (input === 'DEL') {
         parsedInput = ' ';
@@ -227,7 +228,7 @@ export default {
       if (targetCells.length > 0) {
         targetCells.forEach((cell) => {
           if (cell > -1 && cell < this.currentData.length) {
-            this.pushToEditBuffer(bufferIndex, cell, this.currentData[cell], parsedInput);
+            this.pushToEditBuffer(bufferIndex, cell, this.currentData[cell], parsedInput, trimBufferAfter);
             this.currentData[cell] = parsedInput;
           }
         });
@@ -235,7 +236,7 @@ export default {
         if (this.selectedCells.length > 0) {
           this.selectedCells.forEach((cell) => {
             if (cell > -1 && cell < this.currentData.length) {
-              this.pushToEditBuffer(bufferIndex, cell, this.currentData[cell], parsedInput);
+              this.pushToEditBuffer(bufferIndex, cell, this.currentData[cell], parsedInput, trimBufferAfter);
               this.currentData[cell] = parsedInput;
             }
           });
@@ -247,7 +248,7 @@ export default {
             }
           }
         } else if (this.hoveredCell !== -1) {
-          this.pushToEditBuffer(bufferIndex, this.hoveredCell, this.currentData[this.hoveredCell], parsedInput);
+          this.pushToEditBuffer(bufferIndex, this.hoveredCell, this.currentData[this.hoveredCell], parsedInput, trimBufferAfter);
           this.currentData[this.hoveredCell] = parsedInput;
         }
       }
@@ -383,13 +384,10 @@ export default {
         advanceAmt = +1;
         applyKey = 'after';
       }
-      console.log('---');
       if (this.editBuffer[bufferPosition] !== undefined) {
         const edits = cloneArray(this.editBuffer[bufferPosition]);
         if (direction === 'undo') edits.reverse();
-        console.log(`set to ${applyKey}`);
         edits.forEach((edit) => {
-          console.log(edit);
           this.currentData[edit.cell] = edit[applyKey];
         });
         if (advance) {
@@ -397,10 +395,11 @@ export default {
         }
       }
     },
-    pushToEditBuffer(bufferIndex, cell, before, after) {
+    pushToEditBuffer(bufferIndex, cell, before, after, trimBufferAfter = false) {
+      this.bufferPosition = bufferIndex;
+      if (trimBufferAfter && bufferIndex < this.editBuffer.length) this.editBuffer.length = bufferIndex;
       if (this.editBuffer[bufferIndex] === undefined) {
         this.editBuffer[bufferIndex] = [];
-        this.bufferPosition = bufferIndex;
       }
       if (before !== after) {
         this.editBuffer[bufferIndex].push({ cell, before, after });
