@@ -187,10 +187,10 @@ export default {
       } else
 
       // nav/controls
-      if (e.key === 'ArrowUp') { this.arrowNav('n') } else
-      if (e.key === 'ArrowDown') { this.arrowNav('s') } else
-      if (e.key === 'ArrowLeft') { this.arrowNav('w') } else
-      if (e.key === 'ArrowRight') { this.arrowNav('e') } else
+      if (e.key === 'ArrowUp') { this.arrowNav('n', true, e) } else
+      if (e.key === 'ArrowDown') { this.arrowNav('s', true, e) } else
+      if (e.key === 'ArrowLeft') { this.arrowNav('w', true, e) } else
+      if (e.key === 'ArrowRight') { this.arrowNav('e', true, e) } else
       if (e.key === 'Escape') { this.selectedCells = [] } else
       if (e.key === 'a' && e.metaKey) { e.preventDefault(); this.selectAll() } else
       if (e.key === 'b' && e.metaKey) { this.boxShortcut() } else
@@ -253,17 +253,27 @@ export default {
         }
       }
     },
-    arrowNav(direction) {
+    arrowNav(direction, standardInput = false, event = null) {
       this.hoveredCell = -1;
       let dir = direction[0];
       let dist = 1;
       if (direction.length > 1) dist = direction[1];
+
+      if (event) event.preventDefault();
+
+      // remember to also require standardInput = true to avoid weirdness with capitals
+      // todo: support meta
+      // todo: support alt
+
       this.selectedCells.forEach((cell, i) => {
         if (dir === 'n') this.selectedCells[i] -= this.width * dist;
         if (dir === 's') this.selectedCells[i] += this.width * dist;
         if (dir === 'w') this.selectedCells[i] -= dist;
         if (dir === 'e') this.selectedCells[i] += dist;
       });
+
+      // todo: support shift
+
       // clamp
       if (this.selectedCells.length === 1) {
         this.selectedCells[0] = Math.min(Math.max(this.selectedCells[0], 0), this.currentData.length - 1);
