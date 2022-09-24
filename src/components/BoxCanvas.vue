@@ -22,6 +22,8 @@
       <p>canvas</p>
       <label><input type="checkbox" v-model="showBorders">show cell borders</label>
       <label><input class="long-label" type="number" v-model="fontSize">cell size</label>
+      <label>canvas width: <span style="float: right; padding-right: 2px">{{ this.width }}</span></label>
+      <label>canvas height: <span style="float: right; padding-right: 2px">{{ this.height }}</span></label>
       <button @click="center('horizontal')">center horizontally</button>
       <button @click="center('vertical')">center vertically</button>
       <div class="two-buttons">
