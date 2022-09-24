@@ -567,7 +567,7 @@ export default {
       input.onchange = () => {
         const files = Array.from(input.files);
         const fr = new FileReader();
-        fr.onload = (progressEvent) => {
+        fr.onload = () => {
           this.textToData(fr.result);
         }
         fr.readAsText(files[0]);
