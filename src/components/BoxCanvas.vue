@@ -46,13 +46,13 @@
         <label>right</label>
         <button @click="changeCanvasSize('add', 'right')">+</button>
       </div>
-
     </div>
     <div class="control-group">
       <p>saving</p>
       <label><input type="text" v-model="image.name">name</label>
       <label><input type="number" v-model="image.scale">scale</label>
       <button @click="saveImage">save image</button>
+      <button @click="exportTxt">export as .txt</button>
     </div>
   </div>
 </template>
@@ -521,11 +521,26 @@ export default {
         el.style.borderRadius = radius;
         this.selectedCells = selection;
 
-        let anchor = document.createElement('a');
+        const anchor = document.createElement('a');
         anchor.href = canvas.toDataURL('image/png');
         anchor.download = `${this.image.name}.png`;
         anchor.click();
       });
+    },
+    dataToText() {
+      let result = '';
+      this.currentData.forEach((cell, i) => {
+        if (i !== 0 && i % this.width === 0) result += '\n';
+        result += cell;
+      });
+      return result;
+    },
+    exportTxt() {
+      const anchor = document.createElement('a');
+      anchor.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(this.dataToText()));
+      anchor.setAttribute('download', `${this.image.name}.txt`);
+      anchor.style.display = 'none';
+      anchor.click();
     }
   },
   mounted() {
