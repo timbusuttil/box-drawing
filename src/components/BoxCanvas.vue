@@ -53,7 +53,7 @@
       <label><input type="number" v-model="image.scale">scale</label>
       <button @click="saveImage">save image</button>
       <button @click="exportTxt">export as .txt</button>
-      <button @click="importTxt">import from .txt</button>
+      <button @click="importTxt">import from .txt (wip)</button>
     </div>
   </div>
 </template>
