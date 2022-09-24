@@ -471,21 +471,20 @@ export default {
     },
     changeCanvasSize(mode, side) {
       if (side === 'top' || side === 'bottom') {
-        this.height++;
         const extraCells = Array(this.width).fill(' ');
         if (mode === 'add') {
+          this.height++;
           if (side === 'top') {
             this.currentData.unshift(...extraCells);
           } else {
             this.currentData.push(...extraCells);
           }
         } else if (mode === 'remove') {
+          this.height--;
           if (side === 'top') {
             this.currentData.splice(0, this.width);
-            this.height--;
           } else {
             this.currentData.splice(this.currentData.length - this.width, this.width);
-            this.height--;
           }
         }
       } else if (side === 'left' || side === 'right') {
