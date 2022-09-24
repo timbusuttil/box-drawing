@@ -167,9 +167,8 @@ export default {
     hoverCell(i, e) {
       if (e && e.buttons > 0) {
         this.selectArea(this.lastSelected, i, e.shiftKey);
-      } else {
-        this.hoveredCell = i;
       }
+      this.hoveredCell = i;
     },
     handleClick(e) {
       if (e.target.tagName !== 'PRE') this.selectedCells = [];
@@ -585,6 +584,10 @@ pre.hovered {
 
 pre.selected {
   box-shadow: inset 0 0 0 50px rgba(0, 0, 0, 0.25) !important;
+}
+
+pre.selected.hovered {
+  box-shadow: inset 0 0 0 50px rgba(0, 0, 0, 0.35) !important;
 }
 
 /* ----------------------------------------------------------- CONTROLS */
