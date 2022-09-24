@@ -53,6 +53,7 @@
       <label><input type="number" v-model="image.scale">scale</label>
       <button @click="saveImage">save image</button>
       <button @click="exportTxt">export as .txt</button>
+      <button @click="importTxt">import from .txt</button>
     </div>
   </div>
 </template>
@@ -83,6 +84,8 @@ export default {
   },
   data() {
     return {
+      width: 1,
+      height: 1,
       mode: 'text',
       currentData: [],
       hoveredCell: -1,
@@ -535,12 +538,41 @@ export default {
       });
       return result;
     },
+    textToData(input) {
+      var match = /\r|\n/.exec(input);
+      if (match) {
+        console.log(match.index, match);
+      }
+      const linebreaks = [...input.matchAll(/\r|\n/g)];
+      linebreaks.forEach((match, i) => {
+        const index = match.index - i;
+        input = input.slice(0, index) + input.slice(index + 1);
+      });
+
+      for (let i = 0; i < input.length; i++) {
+        this.currentData[i] = input[i];
+      }
+    },
     exportTxt() {
       const anchor = document.createElement('a');
       anchor.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(this.dataToText()));
       anchor.setAttribute('download', `${this.image.name}.txt`);
       anchor.style.display = 'none';
       anchor.click();
+    },
+    importTxt() {
+      let input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.txt';
+      input.onchange = () => {
+        const files = Array.from(input.files);
+        const fr = new FileReader();
+        fr.onload = (progressEvent) => {
+          this.textToData(fr.result);
+        }
+        fr.readAsText(files[0]);
+      };
+      input.click();
     }
   },
   mounted() {
