@@ -1,5 +1,5 @@
 <template>
-  <BoxCanvas :initWidth="25" :initHeight="9" />
+  <BoxCanvas :initWidth="29" :initHeight="11" />
 </template>
 
 <script>
@@ -14,4 +14,10 @@ export default {
 </script>
 
 <style>
+html, body, #app {
+  box-sizing: border-box;
+  margin: 0;
+  width: 100vw;
+  height: 100vh;
+}
 </style>

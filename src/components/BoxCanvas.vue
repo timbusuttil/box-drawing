@@ -1,59 +1,104 @@
 <template>
   <!-- canvas -->
-  <div id="box-renderer" :style="rendererStyle" @mouseleave="hoverCell(-1)">
-    <pre
-      v-for="(cell, i) in currentData" :key="i"
-      :class="cellClasses(i)"
-      :style="cellStyle"
-      @pointerdown="selectCell(i, $event)"
-      @mouseover="hoverCell(i, $event)"
-    >{{ cell }}{{ needsNewline(i) ? '\n' : null }}</pre>
-  </div>
-  <!-- controls -->
-  <div class="controls" @click="selectedCells = []">
-    <div class="control-group">
-      <p>colours</p>
-      <label><input type="color" v-model="colours.bg">bg col</label>
-      <label><input type="color" v-model="colours.fg">fg col</label>
-      <label><input type="checkbox" v-model="colours.flipped">flip fg/bg</label>
-      <button @click="setColorsFromPresets">random preset</button>
+  <div id="container" :style="containerStyle">
+    <div id="box-renderer" :style="rendererStyle" @mouseleave="hoverCell(-1)">
+      <pre
+        v-for="(cell, i) in currentData" :key="i"
+        :class="cellClasses(i)"
+        :style="cellStyle"
+        @pointerdown="selectCell(i, $event)"
+        @mouseover="hoverCell(i, $event)"
+      >{{ cell }}{{ needsNewline(i) ? '\n' : null }}</pre>
     </div>
-    <div class="control-group">
-      <p>canvas</p>
-      <label><input type="checkbox" v-model="showBorders">show cell borders</label>
-      <label><input class="long-label" type="number" v-model="fontSize">cell size</label>
-      <label>canvas width: <span style="float: right; padding-right: 2px">{{ this.width }}</span></label>
-      <label>canvas height: <span style="float: right; padding-right: 2px">{{ this.height }}</span></label>
-      <button @click="center('horizontal')">center horizontally</button>
-      <button @click="center('vertical')">center vertically</button>
-      <div class="two-buttons">
-        <button @click="changeCanvasSize('remove', 'top')">-</button>
-        <label>top</label>
-        <button @click="changeCanvasSize('add', 'top')">+</button>
+    <!-- controls -->
+    <div class="controls left" @click="selectedCells = []" v-show="showControls">
+      <div :class="['control-group', controlsOpen.colours ? 'open' : 'closed']" :style="controlGroupStyle">
+        <template v-if="controlsOpen.colours">
+          <img src="" alt="close" class="close-icon" @click="controlsOpen.colours = false;">
+          <p>colours</p>
+          <label><input type="color" v-model="colours.bg">bg col</label>
+          <label><input type="color" v-model="colours.fg">fg col</label>
+          <label><input type="checkbox" v-model="colours.flipped">flip fg/bg</label>
+          <button @click="setColoursFromPresets">random preset</button>
+        </template>
+        <template v-else>
+          <!-- <img src="" alt="cols" class="control-icon" @click="controlsOpen.colours = true;"> -->
+          <p class="control-icon" @click="controlsOpen.colours = true;">Colours</p>
+        </template>
       </div>
-      <div class="two-buttons">
-        <button @click="changeCanvasSize('remove', 'bottom')">-</button>
-        <label>bottom</label>
-        <button @click="changeCanvasSize('add', 'bottom')">+</button>
+      <div :class="['control-group', controlsOpen.canvas ? 'open' : 'closed']" :style="controlGroupStyle">
+        <template v-if="controlsOpen.canvas">
+          <img src="" alt="close" class="close-icon" @click="controlsOpen.canvas = false;">
+          <p>canvas</p>
+          <label><input type="checkbox" v-model="showBorders">show cell borders</label>
+          <label><input class="long-label" type="number" v-model="fontSize">cell size</label>
+          <label>canvas width: <span style="float: right; padding-right: 2px">{{ this.width }}</span></label>
+          <label>canvas height: <span style="float: right; padding-right: 2px">{{ this.height }}</span></label>
+          <button @click="center('horizontal')">center horizontally</button>
+          <button @click="center('vertical')">center vertically</button>
+          <div class="two-buttons">
+            <button @click="changeCanvasSize('remove', 'top')">-</button>
+            <label>top</label>
+            <button @click="changeCanvasSize('add', 'top')">+</button>
+          </div>
+          <div class="two-buttons">
+            <button @click="changeCanvasSize('remove', 'bottom')">-</button>
+            <label>bottom</label>
+            <button @click="changeCanvasSize('add', 'bottom')">+</button>
+          </div>
+          <div class="two-buttons">
+            <button @click="changeCanvasSize('remove', 'left')">-</button>
+            <label>left</label>
+            <button @click="changeCanvasSize('add', 'left')">+</button>
+          </div>
+          <div class="two-buttons">
+            <button @click="changeCanvasSize('remove', 'right')">-</button>
+            <label>right</label>
+            <button @click="changeCanvasSize('add', 'right')">+</button>
+          </div>
+        </template>
+        <template v-else>
+          <!-- <img src="" alt="canv" class="control-icon" @click="controlsOpen.canvas = true;"> -->
+          <p class="control-icon" @click="controlsOpen.canvas = true;">Canvas</p>
+        </template>
       </div>
-      <div class="two-buttons">
-        <button @click="changeCanvasSize('remove', 'left')">-</button>
-        <label>left</label>
-        <button @click="changeCanvasSize('add', 'left')">+</button>
-      </div>
-      <div class="two-buttons">
-        <button @click="changeCanvasSize('remove', 'right')">-</button>
-        <label>right</label>
-        <button @click="changeCanvasSize('add', 'right')">+</button>
+      <div :class="['control-group', controlsOpen.export ? 'open' : 'closed']" :style="controlGroupStyle">
+        <template v-if="controlsOpen.export">
+          <img src="" alt="close" class="close-icon" @click="controlsOpen.export = false;">
+          <p>export</p>
+          <label><input type="text" v-model="image.name">name</label>
+          <label><input type="number" v-model="image.scale">scale</label>
+          <button @click="saveImage">save image</button>
+          <button @click="exportTxt">export as .txt</button>
+          <!-- <button @click="importTxt">import from .txt (wip)</button> -->
+        </template>
+        <template v-else>
+          <!-- <img src="" alt="exp" class="control-icon" @click="controlsOpen.export = true;"> -->
+          <p class="control-icon" @click="controlsOpen.export = true;">Export</p>
+        </template>
       </div>
     </div>
-    <div class="control-group">
-      <p>saving</p>
-      <label><input type="text" v-model="image.name">name</label>
-      <label><input type="number" v-model="image.scale">scale</label>
-      <button @click="saveImage">save image</button>
-      <button @click="exportTxt">export as .txt</button>
-      <button @click="importTxt">import from .txt (wip)</button>
+    <div class="controls right" @click="selectedCells = []" v-show="showControls">
+      <div :class="['control-group', controlsOpen.help ? 'open' : 'closed']" :style="controlGroupStyle">
+        <template v-if="controlsOpen.help">
+          <img src="" alt="close" class="close-icon" @click="controlsOpen.help = false;">
+          <p>help</p>
+        </template>
+        <template v-else>
+          <!-- <img src="" alt="exp" class="control-icon" @click="controlsOpen.help = true;"> -->
+          <p class="control-icon" @click="controlsOpen.help = true;">Help</p>
+        </template>
+      </div>
+      <div :class="['control-group', controlsOpen.about ? 'open' : 'closed']" :style="controlGroupStyle">
+        <template v-if="controlsOpen.about">
+          <img src="" alt="close" class="close-icon" @click="controlsOpen.about = false;">
+          <p>about</p>
+        </template>
+        <template v-else>
+          <!-- <img src="" alt="exp" class="control-icon" @click="controlsOpen.about = true;"> -->
+          <p class="control-icon" @click="controlsOpen.about = true;">About</p>
+        </template>
+      </div>
     </div>
   </div>
 </template>
@@ -101,7 +146,7 @@ export default {
       colours: {
         bg: '#000000',
         fg: '#0000ff',
-        flipped: false,
+        flipped: true,
         lastPreset: -1,
       },
       image: {
@@ -110,6 +155,14 @@ export default {
       },
       editBuffer: [],
       bufferPosition: -1,
+      showControls: true,
+      controlsOpen: {
+        colours: false,
+        canvas: false,
+        export: false,
+        help: false,
+        about: false,
+      }
     }
   },
   computed: {
@@ -120,6 +173,21 @@ export default {
         background: cols[0],
         color: cols[1],
         fontSize: `${this.fontSize}px`
+      }
+    },
+    containerStyle() {
+      let cols = [this.colours.bg, this.colours.fg];
+      if (this.colours.flipped) cols = cols.reverse();
+      return {
+        background: cols[1]
+      }
+    },
+    controlGroupStyle() {
+      let cols = [this.colours.bg, this.colours.fg];
+      if (this.colours.flipped) cols = cols.reverse();
+      return {
+        background: cols[0],
+        color: cols[1]
       }
     },
     rendererStyle() {
@@ -292,7 +360,7 @@ export default {
     cellByCoords(x, y) {
       return x + y * this.width;
     },
-    setColorsFromPresets() {
+    setColoursFromPresets() {
       let i = Math.floor(Math.random() * presets.length);
       if (i === this.colours.lastPreset) i++;
       this.colours.lastPreset = i;
@@ -509,10 +577,10 @@ export default {
     },
     async saveImage() {
       const el = document.getElementById('box-renderer');
-      const border = getComputedStyle(el)['border'];
+      // const border = getComputedStyle(el)['border'];
       const radius = getComputedStyle(el)['border-radius'];
       const selection = this.selectedCells;
-      el.style.border = 'none';
+      // el.style.border = 'none';
       el.style.borderRadius = 0;
       this.selectedCells = [];
       await nextTick();
@@ -520,7 +588,7 @@ export default {
       html2canvas(el, {
         scale: this.image.scale
       }).then((canvas) => {
-        el.style.border = border;
+        // el.style.border = border;
         el.style.borderRadius = radius;
         this.selectedCells = selection;
 
@@ -590,7 +658,7 @@ export default {
     }
 
     // random cols
-    this.setColorsFromPresets();
+    this.setColoursFromPresets();
 
     // key event listener
     document.addEventListener('keydown', this.handleKey)
@@ -604,12 +672,22 @@ export default {
 </script>
 
 <style scoped>
+/* -------------------------------------------------------- CONTAINER */
+#container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  transition: background 0.3s ease;
+}
 /* ----------------------------------------------------------- CANVAS */
 #box-renderer {
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  /* border: 1px solid rgba(0, 0, 0, 0.25); */
   width: fit-content;
   border-radius: 8px;
   overflow: hidden;
+  margin: auto;
+  box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.15);
+  transition: background 0.3s ease;
 }
 
 /* ----------------------------------------------------------- CELLS */
@@ -620,6 +698,8 @@ pre {
   display: inline;
   user-select: none;
   box-sizing: border-box;
+  cursor: crosshair;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 pre.borders {
@@ -640,25 +720,73 @@ pre.selected.hovered {
 
 /* ----------------------------------------------------------- CONTROLS */
 .controls {
+  position: absolute;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  width: 160px;
+}
+
+.controls.left {
+  margin-left: 30px;
+}
+
+.controls.right {
+  right: 0;
+  margin-right: 30px;
 }
 
 .control-group {
   padding: 8px;
   border-radius: 8px;
-  margin: 8px 4px;
+  margin: 15px auto;
   display: flex;
   flex-direction: column;
   width: 140px;
-  border: 1px solid rgba(0, 0, 0, 0.25);
+  box-shadow: 10px 10px 0 rgba(0, 0, 0, 0.15);
+  background: white;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  position: relative;
 }
 
-.control-group:first-of-type {
-  margin-left: 0;
+.control-group.closed {
+  max-width: 60px;
+  max-height: 60px;
+  width: 60px;
+  height: 60px;
+  /* transform: rotate(20deg); */
 }
 
-.control-group:last-of-type {
-  margin-right: 0;
+.control-group.open {
+  max-width: 160px;
+  max-height: 350px;
+}
+
+.control-icon {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  position: absolute;
+  top: -4px;
+  left: 0;
+}
+
+p.control-icon {
+  text-align: center;
+  line-height: 76px;
+}
+
+.close-icon {
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  position: absolute;
+  top: -4px;
+  right: 0px;
+  background: green;
 }
 
 .control-group > * {
